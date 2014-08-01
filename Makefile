@@ -4,7 +4,7 @@ install:
 	@spm install
 
 build:
-	@spm build
+	@zpm build
 
 publish: publish-doc
 	@spm publish
