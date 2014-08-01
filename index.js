@@ -1,18 +1,21 @@
 
 var win = window;
 var doc = document;
+var FALSE = false;
+var isTop = win === top;
 
 var handlers = [];
-
-var isTop = self === top;
 var documentElement = doc.documentElement;
 var hack = documentElement.doScroll;
 
 var domContentLoaded = "DOMContentLoaded";
 var onreadystatechange = "onreadystatechange";
 var addEventListener = "addEventListener";
+var removeEventListener = "removeEventListener";
 var attachEvent = "attachEvent";
+var detachEvent = "detachEvent";
 var load = "load";
+var onload = "on" + load;
 var readyState = "readyState";
 
 var RE_DOMREADY = hack ? /^loaded|^c/ : /^loaded|c/;
@@ -29,46 +32,49 @@ function flush(){
   }
 }
 
-function checkReady(){
-  try {
-    documentElement.doScroll("left");
-  } catch(ex) {
-    return setTimeout(checkReady, 50);
-  }
-  flush();
-}
 
 if (doc[addEventListener]) {
 
   readyHandler = function (){
-    doc.removeEventListener(domContentLoaded, readyHandler, false);
+    doc[removeEventListener](domContentLoaded, readyHandler, FALSE);
+    doc[removeEventListener](load, readyHandler, FALSE);
     flush();
   };
 
-  doc[addEventListener](domContentLoaded, readyHandler, false);
-  doc[addEventListener](load, readyHandler, false);
+  doc[addEventListener](domContentLoaded, readyHandler, FALSE);
+  doc[addEventListener](load, readyHandler, FALSE);
 
 } else if (hack) {
 
   readyHandler = function (){
     if (/^c/.test(doc[readyState])){
-      doc.detachEvent(onreadystatechange, readyHandler);
+      doc[detachEvent](onreadystatechange, readyHandler);
+      doc[detachEvent](onload, readyHandler);
       flush();
     }
   };
 
   doc[attachEvent](onreadystatechange, readyHandler);
-  doc[attachEvent]("on" + load, readyHandler);
+  doc[attachEvent](onload, readyHandler);
 
-  checkReady();
+  var intervalID = win.setInterval(function(){
+    try {
+      documentElement.doScroll("left");
+
+      win.clearInterval(intervalID);
+      flush();
+    } catch(ex) { }
+  }, 30);
 }
 
 if (isDOMReady){
   flush();
 }
 
-var domready = function(handler){
-  isDOMReady ? handler() : handlers.push(handler);
+module.exports = function(handler){
+  if (isDOMReady) {
+    handler();
+  } else {
+    handlers.push(handler);
+  }
 };
-
-module.exports = domready;
