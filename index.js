@@ -71,7 +71,7 @@ if (isDOMReady){
   flush();
 }
 
-module.exports = function(handler){
+win.ready = module.exports = function(handler){
   if (isDOMReady) {
     handler();
   } else {
